@@ -1,24 +1,24 @@
 import pytest
 import sqlite3
 import os
-from registration.registration import create_db, add_user, authenticate_user  # Укажите правильный путь к вашему модулю
+from registration.registration import create_db, add_user, authenticate_user, display_users
 
-TEST_DB_NAME = "test_users.db"  # Имя тестовой базы данных
-
+ 
+@pytest.fixture(scope="module")
 def setup_database():
-    """Фикстура для настройки базы данных перед каждым тестом и её очистки после."""
-    create_db()  # Убираем аргумент
+    """Фикстура для настройки базы данных перед тестами и её очистки после."""
+    create_db()
     yield
     try:
-        os.remove(TEST_DB_NAME) #Удаляем конкретный файл, а не users.db
+        os.remove('users.db')
     except PermissionError:
-        print(f"Не удалось удалить базу данных users.db. Возможно, она используется другим процессом.")
+        pass
 
-
+ 
 @pytest.fixture
 def connection():
     """Фикстура для получения соединения с базой данных и его закрытия после теста."""
-    conn = sqlite3.connect(TEST_DB_NAME) #Подключаемся к конкретному файлу, а не к тестовому
+    conn = sqlite3.connect('users.db')
     yield conn
     conn.close()
 
@@ -56,3 +56,5 @@ def test_authenticate_user_failure(setup_database, connection):
     assert not is_authenticated, "Аутентификация не должна быть успешной с неверным паролем."
     is_authenticated = authenticate_user('wronguser', 'password123')
     assert not is_authenticated, "Аутентификация не должна быть успешной с неверным логином."
+
+    
