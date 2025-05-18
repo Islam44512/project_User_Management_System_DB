@@ -36,11 +36,19 @@ def test_add_new_user(setup_database, connection):
     user = cursor.fetchone()
     assert user, "Пользователь должен быть добавлен в базу данных."
 
-# Возможные варианты тестов:
-"""
-Тест добавления пользователя с существующим логином.
-Тест успешной аутентификации пользователя.
-Тест аутентификации несуществующего пользователя.
-Тест аутентификации пользователя с неправильным паролем.
-Тест отображения списка пользователей.
-"""
+def test_add_new_user_with_login(username):
+    """Тест добавления пользователя с существующим логином."""
+    add_user("testuser", "testuser@example.com", "password123")
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM users WHERE username= ?", (username,))
+    return cursor.fetchone() is not None
+    
+def authenticate_user(conn, username, password):
+    """Тест успешной аутентификации пользователя."""
+    cursor = conn.cursor()
+    cursor.execute("SELECT password * FROM users WHERE username = ?", (username,))
+    result = cursor.fetchone()
+    if result is None:
+        return False
+    check_password = result[0]
+    return check_password == password
