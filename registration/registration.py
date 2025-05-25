@@ -37,23 +37,16 @@ def display_users():
         for user in cursor.fetchall():
             print(f"Логин: {user[0]}, Электронная почта: {user[1]}")
 
-def remove_user(username):
-    with sqlite3.connect(DB_NAME) as conn:
-        cursor = conn.cursor()
-        cursor.execute('DELETE FROM users WHERE username = ?', (username,))
-        conn.commit()
-        return cursor.rowcount > 0
 
 def user_choice():
     print("\n1. Авторизоваться")
     print("2. Зарегистрироваться")
-    print("3. Удалить пользователя")
-    choice = input("Введите ваш выбор (1/2/3): ")
+    choice = input("Введите ваш выбор (1/2): ")
     return choice
 
 def main():
     create_db()
-    display_users()
+    display_users()  # Показать список пользователей перед выбором действия
 
     choice = user_choice()
 
@@ -68,18 +61,9 @@ def main():
         username = input("Введите логин нового пользователя: ")
         email = input("Введите адрес электронной почты нового пользователя: ")
         password = input("Введите пароль нового пользователя: ")
-        if add_user(username, email, password):
-            print("Пользователь успешно зарегистрирован.")
-        else:
-            print("Пользователь с таким логином уже существует.")
-    elif choice == '3':
-        username = input("Введите логин пользователя для удаления: ")
-        if remove_user(username):
-            print(f"Пользователь '{username}' удалён.")
-        else:
-            print(f"Пользователь '{username}' не найден.")
+        add_user(username, email, password)
     else:
-        print("Неверный ввод! Пожалуйста, введите 1, 2 или 3.")
+        print("Неверный ввод. Пожалуйста, введите 1 для авторизации или 2 для регистрации.")
 
 if __name__ == "__main__":
     main()
