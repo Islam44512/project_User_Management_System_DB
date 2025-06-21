@@ -31,11 +31,14 @@ def authenticate_user(username, password):
         return cursor.fetchone() is not None
 
 def display_users():
+    count = 0
     with sqlite3.connect(DB_NAME) as conn:
         cursor = conn.cursor()
         cursor.execute('SELECT username, email FROM users')
         for user in cursor.fetchall():
             print(f"Логин: {user[0]}, Электронная почта: {user[1]}")
+            count += 1
+    return count
 
 
 def user_choice():

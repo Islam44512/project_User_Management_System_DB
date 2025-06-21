@@ -44,3 +44,33 @@ def test_add_new_user(setup_database, connection):
 Тест аутентификации пользователя с неправильным паролем.
 Тест отображения списка пользователей.
 """
+
+def test_add_user_with_existing_username(connection):
+    """Тест добавления пользователя с существующим логином."""
+    #add_user('testuser', 'testuser@example.com', 'password123')
+    # with pytest.raises(sqlite3.IntegrityError):
+    assert add_user('testuser', 'testuser2@example.com', 'password456') == False
+
+def test_authenticate_user(connection):
+    """Тест успешной аутентификации пользователя."""
+    add_user('testuser', 'testuser@example.com', 'password123')
+    assert authenticate_user('testuser', 'password123'), "Пользователь должен быть аутентифицирован."
+
+def test_authenticate_nonexistent_user(connection):
+    """Тест аутентификации несуществующего пользователя."""
+    assert not authenticate_user('nonexistentuser', 'password123'), "Несуществующий пользователь не должен быть аутентифицирован."
+
+def test_authenticate_wrong_password(connection):
+    """Тест аутентификации пользователя с неправильным паролем."""
+    add_user('testuser', 'testuser@example.com', 'password123')
+    assert not authenticate_user('testuser', 'wrongpassword'), "Пользователь с неверным паролем не должен быть аутентифицирован."
+
+def test_display_users(connection):
+    """Тест отображения списка пользователей."""
+    add_user('testuser', 'testuser@example.com', 'password123')
+    users = display_users()
+    # получить количество пользователей в базе данных через командку SELECT COUNT(*) FROM users
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT COUNT(*) FROM users")
+        count = cursor.fetchone()[0]
+    assert  users == count, "Список пользователей должен содержать один пользователь."
