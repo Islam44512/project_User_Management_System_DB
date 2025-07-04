@@ -1,46 +1,83 @@
-import pytest
-import sqlite3
+# tests/test_registration.py
 import os
-from registration.registration import create_db, add_user, authenticate_user, display_users
+import sqlite3
+import builtins
+import pytest
 
-@pytest.fixture(scope="module")
-def setup_database():
-    """Фикстура для настройки базы данных перед тестами и её очистки после."""
+from registration import (
+    create_db,
+    add_user,
+    authenticate_user,
+    display_users,
+    user_choice,
+)
+
+DB_PATH = "users.db"
+
+
+# ──────────────────────────── фикстуры ────────────────────────────
+@pytest.fixture(scope="module", autouse=True)
+def fresh_db():
+    """Создаём БД перед первым тестом и удаляем после всех тестов."""
     create_db()
     yield
-    try:
-        os.remove('users.db')
-    except PermissionError:
-        pass
+    if os.path.exists(DB_PATH):
+        os.remove(DB_PATH)
+
 
 @pytest.fixture
 def connection():
-    """Фикстура для получения соединения с базой данных и его закрытия после теста."""
-    conn = sqlite3.connect('users.db')
+    conn = sqlite3.connect(DB_PATH)
     yield conn
     conn.close()
 
 
-def test_create_db(setup_database, connection):
-    """Тест создания базы данных и таблицы пользователей."""
-    cursor = connection.cursor()
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users';")
-    table_exists = cursor.fetchone()
-    assert table_exists, "Таблица 'users' должна существовать в базе данных."
+# ──────────────────────────── сами тесты ──────────────────────────
+def test_table_exists(connection):
+    cur = connection.cursor()
+    cur.execute(
+        "SELECT name FROM sqlite_master "
+        "WHERE type='table' AND name='users';"
+    )
+    assert cur.fetchone(), "Таблица users не создана."
 
-def test_add_new_user(setup_database, connection):
-    """Тест добавления нового пользователя."""
-    add_user('testuser', 'testuser@example.com', 'password123')
-    cursor = connection.cursor()
-    cursor.execute("SELECT * FROM users WHERE username='testuser';")
-    user = cursor.fetchone()
-    assert user, "Пользователь должен быть добавлен в базу данных."
 
-# Возможные варианты тестов:
-"""
-Тест добавления пользователя с существующим логином.
-Тест успешной аутентификации пользователя.
-Тест аутентификации несуществующего пользователя.
-Тест аутентификации пользователя с неправильным паролем.
-Тест отображения списка пользователей.
-"""
+def test_add_user_success(connection):
+    assert add_user("alice", "a@mail.com", "pass") is True
+    cur = connection.cursor()
+    cur.execute("SELECT username FROM users WHERE username='alice';")
+    assert cur.fetchone(), "Пользователь alice не добавлен."
+
+
+def test_add_user_duplicate():
+    add_user("bob", "b@mail.com", "123")
+    # повторная попытка должна вернуть False (PRIMARY KEY конфликт)
+    assert add_user("bob", "b@mail.com", "456") is False
+
+
+def test_authenticate_ok():
+    add_user("charlie", "c@mail.com", "qwerty")
+    assert authenticate_user("charlie", "qwerty") is True
+
+
+def test_authenticate_wrong_password():
+    add_user("dave", "d@mail.com", "secret")
+    assert authenticate_user("dave", "wrong") is False
+
+
+def test_authenticate_no_such_user():
+    assert authenticate_user("ghost", "nopass") is False
+
+
+def test_display_users_prints(capsys):
+    # Функция ничего не возвращает, только печатает.
+    add_user("eve", "e@mail.com", "pwd")
+    display_users()
+    captured = capsys.readouterr()
+    assert "Логин:" in captured.out and "eve" in captured.out
+
+
+def test_user_choice(monkeypatch):
+    """Проверяем, что функция читает ввод и возвращает его."""
+    monkeypatch.setattr(builtins, "input", lambda _: "2")
+    assert user_choice() == "2"
