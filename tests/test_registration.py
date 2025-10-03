@@ -36,6 +36,34 @@ def test_add_new_user(setup_database, connection):
     user = cursor.fetchone()
     assert user, "Пользователь должен быть добавлен в базу данных."
 
+def test_add_exist_user(setup_database, connection):
+    add_user('testuser', 'testuser@example.com', 'password123')
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM users WHERE username='testuser';")
+    user = cursor.fetchone()
+    assert user, "Этот пользователь уже существуют, смените юзернайм"
+
+def test_enter_incorrect_password(setup_database, connection):
+    authenticate_user('testuser', 'test')
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM users WHERE username='testuser' AND password='password123';")
+    user = cursor.fetchone()
+    assert user, "Вы ввели неверный пароль"
+
+def test_enter_correct_password(setup_database, connection):
+    authenticate_user('testuser', 'password123')
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM users WHERE username='testuser' AND password='password123';")
+    user = cursor.fetchone()
+    assert user, "Успешно!"
+
+def test_notexist_username(setup_database, connection):
+    authenticate_user('testuser232424242', 'test')
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM users WHERE username='testuser' AND password='password123';")
+    user = cursor.fetchone()
+    assert user, "Вы ввели несуществующего пользователя"
+
 # Возможные варианты тестов:
 """
 Тест добавления пользователя с существующим логином.
