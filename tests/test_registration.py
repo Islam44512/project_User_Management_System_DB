@@ -36,11 +36,40 @@ def test_add_new_user(setup_database, connection):
     user = cursor.fetchone()
     assert user, "Пользователь должен быть добавлен в базу данных."
 
-# Возможные варианты тестов:
-"""
-Тест добавления пользователя с существующим логином.
-Тест успешной аутентификации пользователя.
-Тест аутентификации несуществующего пользователя.
-Тест аутентификации пользователя с неправильным паролем.
-Тест отображения списка пользователей.
-"""
+# остальные
+def test_add_user_with_existing_username(setup_database):
+    """логин уже есть - тест"""
+    add_user('existinguser', 'user1@example.com', 'pass1')
+    result = add_user('existinguser', 'user2@example.com', 'pass2')
+    assert result == False, "Нельзя добавить пользователя с существующим логином"
+
+def test_authenticate_success(setup_database):
+    """успешная аутентификация"""
+    add_user('authuser', 'auth@example.com', 'authpass')
+    result = authenticate_user('authuser', 'authpass')
+    assert result == True, "аутентификация должна быть успешной"
+
+def test_authenticate_wrong_password(setup_database):
+    """тест неверного пароля"""
+    add_user('wrongpassuser', 'wrong@example.com', 'correctpass')
+    result = authenticate_user('wrongpassuser', 'wrongpass')
+    assert result == False, "аутентификация должна быть неудачной"
+
+def test_authenticate_nonexistent_user(setup_database):
+    """тест несуществующего пользователя"""
+    result = authenticate_user('nonexistent', 'password')
+    assert result == False, "несуществующий пользователь не должен аутентифицироваться"
+
+def test_display_users(setup_database, capsys):
+    """тест списка пользователей"""
+# честно скажу этот мне ии помог
+    add_user('user1', 'user1@test.com', 'pass1')
+    add_user('user2', 'user2@test.com', 'pass2')
+    
+    display_users()
+    captured = capsys.readouterr()
+    
+    assert 'user1' in captured.out
+    assert 'user2' in captured.out
+    assert 'user1@test.com' in captured.out
+    assert 'user2@test.com' in captured.out
