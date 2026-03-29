@@ -43,3 +43,4 @@ pip install pytest
 pytest
 ```
 ## Автор
+Проект крутой всё работает
