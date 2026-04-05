@@ -36,6 +36,49 @@ def test_add_new_user(setup_database, connection):
     user = cursor.fetchone()
     assert user, "Пользователь должен быть добавлен в базу данных."
 
+def test_add_existing_username(setup_database, connection):
+    """Тест добавления пользователя с уже существующим логином."""
+    
+    add_user('existinguser', 'existing@example.com', 'password123')
+    
+    result = add_user('existinguser', 'another@example.com', 'differentpass')
+    
+    assert not result, "Добавление пользователя с существующим логином должно быть запрещено"
+    
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM users WHERE username='existinguser';")
+    users = cursor.fetchall()
+    assert len(users) == 1, "В базе должен остаться только один пользователь с этим логином"
+
+
+def test_successful_authentication(setup_database, connection):
+    """Тест успешной аутентификации пользователя."""
+    add_user('authuser', 'auth@example.com', 'correctpass')
+    authenticated = authenticate_user('authuser', 'correctpass')
+    assert authenticated, "Аутентификация должна пройти успешно с правильными данными"
+
+def test_authenticate_nonexistent_user(setup_database):
+    """Тест аутентификации несуществующего пользователя."""
+    authenticated = authenticate_user('nonexistent', 'anypassword')
+    assert not authenticated, "Аутентификация несуществующего пользователя должна завершиться ошибкой"
+
+def test_authenticate_with_wrong_password(setup_database, connection):
+    """Тест аутентификации пользователя с неправильным паролем."""
+    add_user('wrongpassuser', 'wrongpass@example.com', 'correctpassword')
+    authenticated = authenticate_user('wrongpassuser', 'wrongpassword')
+    assert not authenticated, "Аутентификация с неправильным паролем должна завершиться ошибкой"
+
+
+def test_display_users(setup_database, capsys):
+    """Тест корректного отображения списка пользователей."""
+    add_user('displaytest', 'displaytest@example.com', 'password123')
+    display_users()
+    captured = capsys.readouterr()
+    assert 'displaytest' in captured.out, "Функция отображения должна выводить логины пользователей."
+    assert 'password123' not in captured.out, "Пароли не должны отображаться."
+
+
+
 # Возможные варианты тестов:
 """
 Тест добавления пользователя с существующим логином.
