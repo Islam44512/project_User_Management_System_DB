@@ -35,6 +35,8 @@ def test_add_new_user(setup_database, connection):
     cursor.execute("SELECT * FROM users WHERE username='testuser';")
     user = cursor.fetchone()
     assert user, "Пользователь должен быть добавлен в базу данных."
+    assert user[1] == 'testuser@example.com', "Email должен совпадать"
+    assert user[2] == 'password123', "Пароль должен совпадать"
 
 # Возможные варианты тестов:
 """
@@ -44,3 +46,24 @@ def test_add_new_user(setup_database, connection):
 Тест аутентификации пользователя с неправильным паролем.
 Тест отображения списка пользователей.
 """
+
+
+def test_add_user_existing_username(setup_database, connection):
+    """Тест добавления пользователя с существующим логином."""
+    add_user('existing_user', 'first@example.com', 'pass123')
+    result = add_user('existing_user', 'second@example.com', 'pass1234')
+    assert result is False
+
+
+def test_authenticate_user_success(setup_database, connection):
+    """Тест успешной аутентификации пользователя."""
+    add_user('auth_user', 'auth@example.com', 'correct_password')
+    result = authenticate_user('auth_user', 'correct_password')
+    assert result is True
+
+
+def test_authenticate_user_nonexistent(setup_database):
+    """Тест аутентификации несуществующего пользователя."""
+    result = authenticate_user('nonexistent_user', 'any_password')
+    
+    assert result is False
