@@ -5,12 +5,15 @@ from registration.registration import create_db, add_user, authenticate_user, di
 
 @pytest.fixture(scope="module")
 def setup_database():
-    """Фикстура для настройки базы данных перед тестами и её очистки после."""
-    create_db()
-    yield
+    conn = connection
+    cur = conn.cursor()
+    cur.ecxucute("""
+    CREATE TABLE  IF NOT EXIST """)
+    yield conn
     try:
         os.remove('users.db')
     except PermissionError:
+        print("Там PermissionError. Пока.")
         pass
 
 @pytest.fixture
